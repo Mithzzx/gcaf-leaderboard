@@ -1,0 +1,74 @@
+/* App.css or index.css */
+
+body {
+  font-family: 'Roboto', 'Google Sans', sans-serif;
+  background-color: #f5f7fa;
+  margin: 0;
+  padding: 0;
+  justify-content: center;
+  display: flex;
+}
+
+.container {
+  max-width: 1200px; /* Wider table */
+  margin: 40px auto;
+  padding: 0 40px; /* Horizontal margin */
+  text-align: center;
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a73e8;
+  margin-bottom: 24px;
+}
+
+/* Table Styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin: 0 auto;
+  min-height: 600px;
+  color: #000; /* Text color black */
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+}
+
+
+thead {
+  background-color: #f1f3f4;
+}
+
+th, td {
+  padding: 18px 24px;
+  text-align: left;
+  font-size: 15px;
+  border-bottom: 1px solid #e0e0e0;
+  height: 60px;
+  color: #000; /* Text color black */
+}
+
+th {
+  font-weight: 600;
+}
+
+tr:hover {
+  background-color: #f8f9fa;
+}
+
+a {
+  color: #1a73e8;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+a:hover {
+  text-decoration: underline;
+}
