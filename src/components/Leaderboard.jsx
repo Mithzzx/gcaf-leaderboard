@@ -55,10 +55,16 @@ export default function Leaderboard() {
         <table>
           <thead>
             <tr>
-              <th>Rank</th>
-              <th>Name</th>
-              <th>Points</th>
-              <th>Milestone</th>
+              <th style={{ backgroundColor: "#42854", color: "#fff" }}>Rank</th>
+              <th style={{ backgroundColor: "#34A853", color: "#fff" }}>
+                Name
+              </th>
+              <th style={{ backgroundColor: "#fbbc05", color: "#fff" }}>
+                Points
+              </th>
+              <th style={{ backgroundColor: "#ea4335", color: "#fff" }}>
+                Milestone
+              </th>
             </tr>
           </thead>
           <tbody>
