@@ -56,9 +56,9 @@ export default function Leaderboard() {
           <tr>
             <th>Rank</th>
             <th>Name</th>
-            <th>Score</th>
+            <th>Points</th>
             <th>Milestone</th>
-            <th>Profile</th>
+            
           </tr>
         </thead>
         <tbody>
@@ -68,15 +68,6 @@ export default function Leaderboard() {
               <td>{p.name}</td>
               <td>{p.score}</td>
               <td>{p.milestone}</td>
-              <td>
-                <a
-                  href={p.profile}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  View
-                </a>
-              </td>
             </tr>
           ))}
         </tbody>
