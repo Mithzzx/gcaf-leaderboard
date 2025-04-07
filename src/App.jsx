@@ -5,8 +5,8 @@ import './App.css';
 function App() {
   return (
     <div className="App">
-      <h1 className="container">Google Cloud Arcade Leaderboard</h1>
-      <div className="table-wrapper"><Leaderboard /></div>
+      <h1 className="container no-hover">Google Cloud Arcade Leaderboard</h1>
+      <Leaderboard />
     </div>
   );
 }

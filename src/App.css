@@ -124,6 +124,11 @@ button:hover {
   transform: scale(1.05);
 }
 
+.no-hover:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .container {
