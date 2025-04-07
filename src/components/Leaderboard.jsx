@@ -51,27 +51,28 @@ export default function Leaderboard() {
 
   return (
     <div className="container">
-      <table>
-        <thead>
-          <tr>
-            <th>Rank</th>
-            <th>Name</th>
-            <th>Points</th>
-            <th>Milestone</th>
-            
-          </tr>
-        </thead>
-        <tbody>
-          {participants.map((p, index) => (
-            <tr key={index}>
-              <td>{index + 1}</td>
-              <td>{p.name}</td>
-              <td>{p.score}</td>
-              <td>{p.milestone}</td>
+      <div className="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Points</th>
+              <th>Milestone</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {participants.map((p, index) => (
+              <tr key={index}>
+                <td>{index + 1}</td>
+                <td>{p.name}</td>
+                <td>{p.score}</td>
+                <td>{p.milestone}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

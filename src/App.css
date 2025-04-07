@@ -1,49 +1,67 @@
 /* App.css or index.css */
 
+/* Enhanced Styling */
+
 body {
   font-family: 'Roboto', 'Google Sans', sans-serif;
-  background-color: #f5f7fa;
+  background: linear-gradient(135deg, #e3f2fd, #f5f7fa);
   margin: 0;
   padding: 0;
-  justify-content: center;
   display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
 }
 
 .container {
-  max-width: 1200px; /* Wider table */
-  margin: 40px auto;
-  padding: 0 40px; /* Horizontal margin */
+  max-width: 90%; /* Adjust container width dynamically */
+  margin: 10px auto;
+  padding: 20px;
   text-align: center;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
 }
 
 h1 {
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: 2.5rem;
+  font-weight: 700;
   color: #1a73e8;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Table Styling */
+.table-wrapper {
+  display: flex;
+  justify-content: center;
+  overflow-x: auto; /* Enable horizontal scrolling for small screens */
+}
+
 table {
-  width: 100%;
+  width: 100%; /* Make table take full width of the container */
+  max-width: 1200px; /* Limit the maximum width for larger screens */
   border-collapse: collapse;
   background-color: #fff;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   margin: 0 auto;
-  min-height: 600px;
-  color: #000; /* Text color black */
+  color: #333;
 }
-
-.table-wrapper {
-  overflow-x: auto;
-  border-radius: 12px;
-}
-
 
 thead {
-  background-color: #f1f3f4;
+  background: linear-gradient(90deg, #1a73e8, #4285f4);
+  color: #fff;
+  text-transform: uppercase;
+  font-size: 14px;
+  letter-spacing: 1px;
 }
 
 th, td {
@@ -52,23 +70,120 @@ th, td {
   font-size: 15px;
   border-bottom: 1px solid #e0e0e0;
   height: 60px;
-  color: #000; /* Text color black */
 }
 
 th {
   font-weight: 600;
 }
 
-tr:hover {
-  background-color: #f8f9fa;
+tbody tr:nth-child(odd) {
+  background-color: #f9f9f9;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #ffffff;
+}
+
+tbody tr:hover {
+  background-color: #e3f2fd;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+td:first-child {
+  font-weight: bold;
+  color: #1a73e8;
 }
 
 a {
   color: #1a73e8;
   text-decoration: none;
   font-weight: 500;
+  transition: color 0.3s ease;
 }
 
 a:hover {
+  color: #0c47a1;
   text-decoration: underline;
+}
+
+/* Button Styling */
+button {
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+  background: #0c47a1;
+  transform: scale(1.05);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .container {
+    max-width: 95%; /* Slightly reduce container width for tablets */
+  }
+
+  table {
+    font-size: 14px;
+  }
+
+  th, td {
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    max-width: 100%; /* Full width for smaller tablets */
+    padding: 10px;
+  }
+
+  table {
+    font-size: 13px;
+  }
+
+  th, td {
+    padding: 10px 12px;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 10px; /* Reduce padding for smaller screens */
+  }
+
+  table {
+    width: 100%; /* Ensure table fits within the screen */
+    font-size: 12px; /* Reduce font size for smaller screens */
+  }
+
+  th, td {
+    padding: 6px 8px; /* Reduce padding for table cells */
+    font-size: 12px; /* Smaller font size for better fit */
+  }
+
+  h1 {
+    font-size: 1.5rem; /* Reduce heading size */
+    margin-bottom: 16px; /* Adjust spacing below the heading */
+  }
+
+  tbody tr {
+    height: auto; /* Allow rows to adjust height dynamically */
+  }
+
+  td:first-child {
+    font-weight: bold;
+    font-size: 13px; /* Slightly larger font for the first column */
+  }
 }
