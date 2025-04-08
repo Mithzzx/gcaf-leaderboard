@@ -45,13 +45,13 @@ The system processes CSV reports from GCAF to generate the leaderboard data. The
     <td align="center">
       <a href="https://github.com/kabillanta">
         <img src="https://github.com/kabillanta.png" width="100px;" alt="kabillanta"/><br />
-        <sub><b>kabillanta</b></sub>
+        <sub><b>Kabillan TA</b></sub>
       </a>
     </td>
     <td align="center">
       <a href="https://github.com/pr1ncegupta">
         <img src="https://github.com/pr1ncegupta.png" width="100px;" alt="pr1ncegupta"/><br />
-        <sub><b>pr1ncegupta</b></sub>
+        <sub><b>Prince Gupta</b></sub>
       </a>
     </td>
     <!-- Add more contributors as needed -->
