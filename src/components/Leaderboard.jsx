@@ -33,7 +33,7 @@ export default function Leaderboard() {
           }
 
           return {
-            name: row["Name"] || "Unknown",
+            name: row["User Name"] || "Unknown",
             score,
             milestone,
             profile: row["Google Cloud Skills Boost Profile URL"],
