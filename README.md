@@ -11,7 +11,7 @@ This project displays a leaderboard for the Google Cloud Arcade Festival (GCAF),
 ## Setup Instructions
 1. Clone the repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/kabillanta/gcaf-leaderboard.git
 cd gcaf-leaderboard
 ```
 
@@ -54,14 +54,5 @@ The system processes CSV reports from GCAF to generate the leaderboard data. The
         <sub><b>Prince Gupta</b></sub>
       </a>
     </td>
-    <!-- Add more contributors below -->
   </tr>
 </table>
-
-<!-- To add yourself as a contributor:
-1. Fork the repository
-2. Add your profile in the table above
-3. Submit a pull request
--->
-
-
