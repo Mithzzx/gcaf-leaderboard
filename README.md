@@ -38,23 +38,23 @@ yarn dev
 ## Data Processing
 The system processes CSV reports from GCAF to generate the leaderboard data. The script in `src/scripts/runthisbeforepush.py` cleans and formats the data for display.
 
-## Contributors
+## 👥 Contributors
 
 <table>
   <tr>
     <td align="center">
-      <a href="https://github.com/kabillanta">
-        <img src="https://github.com/kabillanta.png" width="100px;" alt="kabillanta"/><br />
+      <a href="https://github.com/kabillanta" target="_blank">
+        <img src="https://github.com/kabillanta.png" width="100" alt="kabillanta's profile picture"/><br/>
         <sub><b>Kabillan TA</b></sub>
       </a>
     </td>
     <td align="center">
-      <a href="https://github.com/pr1ncegupta">
-        <img src="https://github.com/pr1ncegupta.png" width="100px;" alt="pr1ncegupta"/><br />
+      <a href="https://github.com/pr1ncegupta" target="_blank">
+        <img src="https://github.com/pr1ncegupta.png" width="100" alt="pr1ncegupta's profile picture"/><br/>
         <sub><b>Prince Gupta</b></sub>
       </a>
     </td>
-    <!-- Add more contributors as needed -->
+    <!-- Add more contributors below -->
   </tr>
 </table>
 
@@ -64,5 +64,4 @@ The system processes CSV reports from GCAF to generate the leaderboard data. The
 3. Submit a pull request
 -->
 
-## License
-[Add your license here]
+
