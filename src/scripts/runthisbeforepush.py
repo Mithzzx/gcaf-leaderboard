@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Using proper path with forward slashes to avoid escape sequence issues
-df = pd.read_csv("public/Data(09-04).csv")
+df = pd.read_csv("public/rawData.csv")
 
 columns_to_keep = [
     "User Name",
@@ -13,6 +13,6 @@ columns_to_keep = [
 
 df_cleaned = df[columns_to_keep]
 
-df_cleaned.to_csv("public/dataApril9.csv", index=False)
+df_cleaned.to_csv("public/dataApril10.csv", index=False)
 
 print("Cleaned CSV saved as 'data.csv'")
