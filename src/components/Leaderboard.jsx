@@ -34,6 +34,10 @@ export default function Leaderboard() {
 
           return {
             name: row["User Name"] || "Unknown",
+            arcade,
+            trivia,
+            skill,
+            labs,
             score,
             milestone,
             profile: row["Google Cloud Skills Boost Profile URL"],
@@ -56,22 +60,26 @@ export default function Leaderboard() {
           <thead>
             <tr>
               <th style={{ backgroundColor: "#42854", color: "#fff" }}>Rank</th>
-              <th style={{ backgroundColor: "#34A853", color: "#fff" }}>
-                Name
-              </th>
-              <th style={{ backgroundColor: "#fbbc05", color: "#fff" }}>
-                Points
-              </th>
-              <th style={{ backgroundColor: "#ea4335", color: "#fff" }}>
-                Milestone
-              </th>
+              <th style={{ backgroundColor: "#34A853", color: "#fff" }}>Name</th>
+              
+              <th style={{ backgroundColor: "#fbbc05", color: "#fff" }}>Arcade</th>
+              <th style={{ backgroundColor: "#ea4335", color: "#fff" }}>Trivia</th>
+              <th style={{ backgroundColor: "#42854", color: "#fff" }}>Skill</th>              
+              <th style={{ backgroundColor: "#34A853", color: "#fff" }}>Labs</th>
+              
+              <th style={{ backgroundColor: "#fbbc05", color: "#fff" }}>Points</th>
+              <th style={{ backgroundColor: "#ea4335", color: "#fff" }}>Milestone</th>
             </tr>
           </thead>
           <tbody>
             {participants.map((p, index) => (
               <tr key={index}>
                 <td>{index + 1}</td>
-                <td>{p.name}</td>
+                <td style={{textAlign : "left"}}>{p.name}</td>
+                <td>{p.arcade}</td>
+                <td>{p.trivia}</td>
+                <td>{p.skill}</td>
+                <td>{p.labs}</td>
                 <td>{p.score}</td>
                 <td>{p.milestone}</td>
               </tr>
