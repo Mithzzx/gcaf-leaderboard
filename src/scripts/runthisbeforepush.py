@@ -1,6 +1,6 @@
 import pandas as pd
 
-df = pd.read_csv("D:\Work\Projects\gcaf-regular\gcaf-leaderboard\public\\rawData.csv")
+df = pd.read_csv(r"D:\gcaf reports\15thApr.csv")
 
 columns_to_keep = [
     "User Name",
