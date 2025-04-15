@@ -12,17 +12,38 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+.App {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 100vw;
 }
 
 .container {
-  max-width: 90%;
+  width: 100%;
+  max-width: 95%;
   margin: 10px auto;
-  padding: 20px;
+  padding: 15px 10px;
   text-align: center;
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+}
+
+.leaderboard-container {
+  overflow: hidden;
+  padding: 15px 5px;
 }
 
 .container:hover {
@@ -44,9 +65,13 @@ h1 {
   justify-content: center;
   overflow-x: auto; /* Enable horizontal scrolling for small screens */
   background: #ffffff; /* Explicit background to avoid conflicts */
+  width: 100%;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  padding: 0;
+  margin: 0;
 }
 
-/* Table Styles */
+/* Responsive tables */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -56,6 +81,79 @@ table {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   margin: 0 auto;
   color: #333;
+  table-layout: auto; /* Allow the table to adapt to content */
+}
+
+/* Desktop table is hidden on mobile */
+.desktop-table {
+  display: none;
+  min-width: 100%;
+  table-layout: fixed; /* Fix table layout for desktop to prevent column cropping */
+}
+
+/* Mobile table is shown by default */
+.mobile-table {
+  display: table;
+  min-width: 100%;
+  table-layout: fixed; /* Fix table layout for mobile */
+}
+
+/* Show desktop table and hide mobile table on larger screens */
+@media screen and (min-width: 768px) {
+  .desktop-table {
+    display: table;
+    margin: 0;
+    width: 100%;
+  }
+  
+  .mobile-table {
+    display: none;
+  }
+  
+  .container {
+    max-width: 98%;
+    padding: 15px 5px;
+  }
+  
+  .table-wrapper {
+    width: 100%;
+    overflow-x: visible;
+    max-width: 100%;
+  }
+
+  /* Make the desktop tables fit better */
+  .desktop-table th,
+  .desktop-table td {
+    width: auto;
+    min-width: unset;
+  }
+
+  /* Set consistent column widths for desktop */
+  .desktop-table th:first-child,
+  .desktop-table td:first-child {
+    width: 5%; /* Rank */
+  }
+  
+  .desktop-table th:nth-child(2),
+  .desktop-table td:nth-child(2) {
+    width: 25%; /* Name */
+    text-align: left;
+  }
+  
+  .desktop-table th:nth-child(3),
+  .desktop-table td:nth-child(3),
+  .desktop-table th:nth-child(4),
+  .desktop-table td:nth-child(4),
+  .desktop-table th:nth-child(5),
+  .desktop-table td:nth-child(5),
+  .desktop-table th:nth-child(6),
+  .desktop-table td:nth-child(6),
+  .desktop-table th:nth-child(7),
+  .desktop-table td:nth-child(7),
+  .desktop-table th:nth-child(8),
+  .desktop-table td:nth-child(8) {
+    width: 10%; /* Equal width for all other columns */
+  }
 }
 
 thead {
@@ -72,10 +170,65 @@ td {
   text-align: center;
   font-size: 14px;
   border-bottom: 1px solid #e0e0e0;
+  white-space: nowrap; /* Prevent text wrapping in cells */
 }
 
 th {
   font-weight: 600;
+}
+
+/* Make first column with rank narrower */
+th:first-child, td:first-child {
+  width: 60px;
+  min-width: 40px;
+  max-width: 60px;
+}
+
+/* Make name column wider */
+th:nth-child(2), td:nth-child(2) {
+  min-width: 160px;
+  text-align: left;
+}
+
+/* Make other columns consistent width */
+th:not(:first-child):not(:nth-child(2)), 
+td:not(:first-child):not(:nth-child(2)) {
+  min-width: 80px;
+  width: 80px;
+}
+
+/* Mobile table specific styles - now with 3 columns */
+.mobile-table th:first-child,
+.mobile-table td:first-child {
+  width: 20%;
+  min-width: 40px;
+}
+
+.mobile-table th:nth-child(2),
+.mobile-table td:nth-child(2) {
+  width: 50%;
+  min-width: 120px;
+  max-width: 150px;
+  text-align: left;
+}
+
+.mobile-table .name-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.mobile-table th:nth-child(3),
+.mobile-table td:nth-child(3) {
+  width: 15%;
+  min-width: 50px;
+}
+
+.mobile-table th:nth-child(4),
+.mobile-table td:nth-child(4) {
+  width: 15%;
+  min-width: 50px;
 }
 
 tbody tr:nth-child(odd) {
@@ -126,15 +279,208 @@ button:hover {
   transform: scale(1.05);
 }
 
+/* View details button */
+.view-details-btn {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+  background-color: #4285f4;
+}
+
+.view-details-btn:hover {
+  background-color: #1a73e8;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 320px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  animation: scaleIn 0.2s ease-out;
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: linear-gradient(90deg, #1a73e8, #4285f4);
+  color: white;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 85%;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  line-height: 1;
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  transform: scale(1.1);
+  background: none;
+}
+
+.modal-body {
+  padding: 15px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row span:first-child {
+  font-weight: 500;
+  color: #555;
+}
+
+.detail-row span:last-child {
+  font-weight: 500;
+  color: #333; /* Darker color for value text to ensure visibility */
+}
+
+.detail-row.highlight {
+  background-color: #e3f2fd;
+  margin: 0 -15px;
+  padding: 8px 15px;
+  font-weight: bold;
+}
+
+.detail-row.highlight span {
+  color: #1a73e8;
+}
+
 .no-hover:hover {
   transform: none;
   box-shadow: none;
 }
 
+/* Top 10 modal styles */
+.top-modal {
+  background: linear-gradient(to bottom, #ffffff, #f9f9f9);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25), 0 0 15px rgba(255, 215, 0, 0.2);
+  position: relative;
+  z-index: 1001;
+}
+
+.top-header {
+  background: linear-gradient(135deg, #ffd700, #ff8c00) !important;
+  color: #333;
+}
+
+.top-header h3 {
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  color: #333;
+  font-weight: 600;
+}
+
+.top-badge {
+  margin: 10px -15px -15px -15px;
+  padding: 10px;
+  background: linear-gradient(90deg, rgba(255,215,0,0.2), rgba(255,215,0,0.1));
+  text-align: center;
+  font-weight: bold;
+  color: #333;
+  border-top: 1px solid rgba(255, 215, 0, 0.3);
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+.elite-badge {
+  background: linear-gradient(90deg, rgba(255,215,0,0.4), rgba(255,215,0,0.2));
+  padding: 12px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+  }
+}
+
+/* Loading indicator styles */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  width: 100%;
+}
+
+.loading-spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: #4285f4;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* Responsive Design */
-@media (max-width: 1024px) {
+@media screen and (max-width: 1024px) {
   .container {
-    max-width: 95%; /* Slightly reduce container width for tablets */
+    max-width: 98%;
   }
 
   table {
@@ -143,62 +489,135 @@ button:hover {
 
   th,
   td {
-    padding: 12px 16px;
+    padding: 10px 10px;
+  }
+  
+  /* Adjust column widths for better fit */
+  th:not(:first-child):not(:nth-child(2)), 
+  td:not(:first-child):not(:nth-child(2)) {
+    min-width: 70px;
+    width: 70px;
   }
 }
 
-@media (max-width: 768px) {
+/* Force responsive layout on mobile */
+@media screen and (max-width: 768px) {
   .container {
-    max-width: 100%; /* Full width for smaller tablets */
-    padding: 10px;
+    max-width: 100%;
+    padding: 15px 5px;
+    margin: 5px auto;
   }
 
-  table {
-    font-size: 12px;
+  h1 {
+    font-size: 1.6rem;
+    margin-bottom: 15px;
+  }
+
+  table:not(.details-table) {
+    font-size: 13px;
   }
 
   th,
   td {
     padding: 8px 10px;
   }
-
-  h1 {
-    font-size: 1.8rem;
-    margin-bottom: 20px;
+  
+  /* Style for small screen view button */
+  .info-button {
+    padding: 5px 10px;
+    font-size: 12px;
   }
 }
 
-@media (max-width: 480px) {
+@media screen and (max-width: 480px) {
   .container {
-    padding: 10px;
+    padding: 10px 2px;
+    margin: 5px auto;
+    max-width: 100%;
   }
-
-  .table-wrapper {
-    overflow-x: auto; /* Ensure table can scroll horizontally if needed */
+  
+  h1 {
+    font-size: 1.3rem;
+    margin-bottom: 8px;
   }
-
-  table {
+  
+  .view-details-btn {
+    padding: 3px 6px;
     font-size: 11px;
+  }
+  
+  .mobile-table th, 
+  .mobile-table td {
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+  
+  /* Optimize for even smaller screens */
+  .mobile-table th:first-child,
+  .mobile-table td:first-child {
+    min-width: 30px;
+    width: 15%;
+    padding-left: 5px;
+    padding-right: 0;
+  }
+  
+  .mobile-table th:nth-child(2),
+  .mobile-table td:nth-child(2) {
+    min-width: auto;
+    width: 55%;
+  }
+  
+  .mobile-table th:nth-child(3),
+  .mobile-table td:nth-child(3) {
+    width: 15%;
+    min-width: 40px;
+  }
+  
+  .mobile-table th:nth-child(4),
+  .mobile-table td:nth-child(4) {
+    width: 15%;
+    min-width: 40px;
+  }
+}
+
+@media screen and (max-width: 360px) {
+  .container {
+    padding: 8px 1px;
+  }
+  
+  h1 {
+    font-size: 1.2rem;
+  }
+  
+  .view-details-btn {
+    padding: 2px 5px;
+    font-size: 10px;
+  }
+  
+  .mobile-table th, 
+  .mobile-table td {
+    padding: 6px 2px;
+    font-size: 11px;
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .desktop-table {
+    display: none;
+  }
+  .mobile-table {
+    display: table;
     width: 100%;
   }
+}
 
-  th,
-  td {
-    padding: 6px 8px;
-    font-size: 11px;
+@media (min-width: 769px) {
+  .mobile-table {
+    display: none;
   }
-
-  h1 {
-    font-size: 1.5rem; /* Further reduce size for mobile */
-    margin-bottom: 12px;
-  }
-
-  tbody tr {
-    height: auto; /* Allow rows to adjust height dynamically */
-  }
-
-  td:first-child {
-    font-weight: bold;
-    font-size: 12px;
+  .desktop-table {
+    display: table;
+    width: 100%;
   }
 }
