@@ -429,6 +429,7 @@ if __name__ == "__main__":
                 "arcade_points": calculate_points(profile_data.get("badge_counts", {})),
                 "milestone": calculate_milestone(profile_data.get("badge_counts", {})).get("milestone", "No Milestone"),
                 "bonus_points": calculate_milestone(profile_data.get("badge_counts", {})).get("bonus_points", 0),
+                "total_points": 0,
             })
 
 

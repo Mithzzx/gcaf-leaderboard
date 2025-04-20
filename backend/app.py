@@ -53,6 +53,12 @@ ROOT_PROFILES_DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)
 # The app URL - will be set from environment or default to localhost for development
 APP_URL = os.environ.get('APP_URL', 'http://localhost:5000')
 
+# Make sure APP_URL has a proper scheme (http:// or https://)
+if APP_URL and not (APP_URL.startswith('http://') or APP_URL.startswith('https://')):
+    APP_URL = f"https://{APP_URL}"
+
+logger.info(f"Using APP_URL: {APP_URL}")
+
 def keep_alive():
     """Ping the health endpoint to keep the service alive"""
     try:
