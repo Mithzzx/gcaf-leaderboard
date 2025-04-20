@@ -117,6 +117,19 @@ def before_request():
     # Remove the function after it runs once
     app.before_request_funcs[None].remove(before_request)
 
+@app.route('/', methods=['GET'])
+def root():
+    """Root endpoint that simply returns a welcome message"""
+    return jsonify({
+        "message": "GCAF Leaderboard API is running",
+        "endpoints": {
+            "leaderboard": "/api/leaderboard",
+            "csv": "/api/csv",
+            "health": "/api/health",
+            "run-scraper": "/api/run-scraper (POST)"
+        }
+    })
+
 @app.route('/api/leaderboard', methods=['GET'])
 def get_leaderboard():
     """Return leaderboard data as JSON"""
