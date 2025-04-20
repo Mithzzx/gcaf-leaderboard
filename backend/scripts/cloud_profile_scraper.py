@@ -404,9 +404,6 @@ if __name__ == "__main__":
     
     # List of profile URLs
     profile_urls = [
-        "https://www.cloudskillsboost.google/public_profiles/ddfc7723-216a-444c-ab34-cba5d7807296",
-        "https://www.cloudskillsboost.google/public_profiles/104ba705-a4ed-422e-9599-e8cbcdfb0be6",
-        "https://www.cloudskillsboost.google/public_profiles/another-profile-id",
         # Add more URLs as needed
     ]
 

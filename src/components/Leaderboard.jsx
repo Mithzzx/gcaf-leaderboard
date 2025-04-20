@@ -2,6 +2,9 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import Papa from "papaparse";
 import ReactConfetti from "react-confetti";
 
+// API base URL - we'll set this to the Render deployment URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 export default function Leaderboard() {
   const [participants, setParticipants] = useState([]);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
@@ -33,11 +36,38 @@ export default function Leaderboard() {
   const loadData = useCallback(async (abortController) => {
     setIsLoading(true);
     try {
-      // Try to load from the following locations in order:
-      // 1. Root directory (where the scraper might save it)
-      // 2. Data directory (preferred location with new structure)
-      // 3. Public directory (fallback)
+      // First try to load from the API
       let response;
+      try {
+        response = await fetch(`${API_BASE_URL}/api/leaderboard`, { 
+          signal: abortController.signal 
+        });
+        
+        if (response.ok) {
+          const jsonData = await response.json();
+          setLastUpdated(new Date());
+          
+          const processedData = jsonData.map((row) => ({
+            name: row["name"] || "Unknown",
+            arcade: parseInt(row["game_badges"]) || 0,
+            specialArcade: parseInt(row["special_game_badges"]) || 0,
+            trivia: parseInt(row["trivia_badges"]) || 0,
+            skill: parseInt(row["skill_badges"]) || 0,
+            labs: parseInt(row["lab_badges"]) || 0,
+            score: parseInt(row["total_points"]) || 0,
+            milestone: row["milestone"] || "None",
+          }));
+
+          const validData = processedData.filter(p => !isNaN(p.score));
+          setParticipants(validData);
+          setIsLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.log(`Failed to load from API: ${e.message}`);
+      }
+      
+      // Fallback to local CSV files if API fails
       const dataSources = [
         "/profiles_data.csv",
         "/data/profiles/profiles_data.csv",
