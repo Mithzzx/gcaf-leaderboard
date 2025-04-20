@@ -508,4 +508,3 @@ if __name__ == "__main__":
         os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
         df.to_csv(output_file, index=False)
         print(f"Created empty data file at {output_file} due to error")
-``` 
