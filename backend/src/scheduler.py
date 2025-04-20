@@ -29,6 +29,9 @@ def run_scraper():
         # Project root is 2 levels up from script directory
         project_root = os.path.abspath(os.path.join(script_dir, "..", ".."))
         
+        # Log the actual project root for debugging
+        logging.info(f"Project root directory: {project_root}")
+        
         # Save to data directory - this is the standard location
         data_dir = os.path.abspath(os.path.join(project_root, "data", "profiles"))
         
@@ -79,9 +82,13 @@ def run_scraper():
         else:
             logging.error(f"Scraper failed with return code {result.returncode}")
             logging.error(f"Error: {result.stderr}")
+            # Log the actual stdout too for debugging
+            logging.error(f"Output: {result.stdout}")
             
     except Exception as e:
         logging.error(f"Error running scraper: {e}")
+        import traceback
+        logging.error(traceback.format_exc())
 
 def main():
     logging.info("Running the cloud profile scraper")

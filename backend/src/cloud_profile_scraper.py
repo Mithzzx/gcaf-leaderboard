@@ -23,6 +23,7 @@ def scrape_cloud_profile(url):
     }
 
     try:
+        print(f"Requesting profile URL: {url}")
         response = requests.get(url, headers=headers)
         response.raise_for_status()  # Raise exception for 4XX/5XX status codes
     except requests.exceptions.RequestException as e:
@@ -39,8 +40,10 @@ def scrape_cloud_profile(url):
     try:
         profile_name = soup.select_one('h1.ql-display-small').text.strip()
         profile_data['name'] = profile_name
+        print(f"Successfully found profile name: {profile_name}")
     except (AttributeError, TypeError):
         profile_data['name'] = "Name not found"
+        print("Could not find profile name")
 
     # Extract profile details
     try:
@@ -67,7 +70,7 @@ def scrape_cloud_profile(url):
         'skill_badges': 0,
         'game_badges': 0,
         'trivia_badges': 0,
-        'special_game_badges': 0,  # Add this line
+        'special_game_badges': 0,
         'total_badges': 0
     }
 
@@ -76,7 +79,7 @@ def scrape_cloud_profile(url):
         'skill_badges': [],
         'game_badges': [],
         'trivia_badges': [],
-        'special_game_badges': []  # Add this line
+        'special_game_badges': []
     }
 
     # Extract badges
@@ -402,12 +405,15 @@ if __name__ == "__main__":
                       help="Output CSV file path (default: profiles_data.csv)")
     args = parser.parse_args()
     
-    # List of profile URLs
+    # Print the output file path for debugging
+    print(f"Output file will be saved to: {os.path.abspath(args.output_file)}")
+    
+    # List of profile URLs - be sure these are valid and accessible URLs
     profile_urls = [
         "https://www.cloudskillsboost.google/public_profiles/ddfc7723-216a-444c-ab34-cba5d7807296",
         "https://www.cloudskillsboost.google/public_profiles/104ba705-a4ed-422e-9599-e8cbcdfb0be6",
-        "https://www.cloudskillsboost.google/public_profiles/another-profile-id",
-        # Add more URLs as needed
+        # Replace this placeholder with actual profile URLs
+        # "https://www.cloudskillsboost.google/public_profiles/another-profile-id", 
     ]
 
     # List to store profile data
@@ -421,7 +427,14 @@ if __name__ == "__main__":
         profile_data = scrape_cloud_profile(url)
 
         if profile_data:
-            # Add the profile data to the list
+            # Calculate total points properly before adding to the list
+            arcade_points = calculate_points(profile_data.get("badge_counts", {}))
+            milestone_result = calculate_milestone(profile_data.get("badge_counts", {}))
+            milestone_name = milestone_result.get("milestone", "No Milestone")
+            bonus_points = milestone_result.get("bonus_points", 0)
+            total_points = arcade_points + bonus_points
+            
+            # Add the profile data to the list with all fields properly calculated
             profiles_data.append({
                 "name": profile_data.get("name", "N/A"),
                 "game_badges": profile_data.get("badge_counts", {}).get("game_badges", 0),
@@ -429,20 +442,48 @@ if __name__ == "__main__":
                 "trivia_badges": profile_data.get("badge_counts", {}).get("trivia_badges", 0),
                 "skill_badges": profile_data.get("badge_counts", {}).get("skill_badges", 0),
                 "lab_badges": profile_data.get("badge_counts", {}).get("lab_badges", 0),
-                "arcade_points": calculate_points(profile_data.get("badge_counts", {})),
-                "milestone": calculate_milestone(profile_data.get("badge_counts", {})).get("milestone", "No Milestone"),
-                "bonus_points": calculate_milestone(profile_data.get("badge_counts", {})).get("bonus_points", 0),
+                "arcade_points": arcade_points,
+                "milestone": milestone_name,
+                "bonus_points": bonus_points,
+                "total_points": total_points
             })
 
-
     print(f"Scraping completed in {time.time() - start_time:.2f} seconds")
+    print(f"Found data for {len(profiles_data)} profiles")
 
-    # Convert the list of profiles to a DataFrame
-    df = pd.DataFrame(profiles_data)
-    df['total_points'] = df['arcade_points'] + df['bonus_points']
-    df.sort_values(by=['total_points'], ascending=False, inplace=True)
-
-    # Save the DataFrame to a CSV file
-    output_file = args.output_file
-    df.to_csv(output_file, index=False)
-    print(f"Data saved to {output_file}")
+    # Check if we have any data before creating a DataFrame
+    if profiles_data:
+        # Convert the list of profiles to a DataFrame
+        df = pd.DataFrame(profiles_data)
+        
+        # Sort by total points (descending)
+        df.sort_values(by=['total_points'], ascending=False, inplace=True)
+        
+        # Save the DataFrame to a CSV file
+        output_file = args.output_file
+        
+        # Create parent directory if it doesn't exist
+        os.makedirs(os.path.dirname(os.path.abspath(output_file)) or '.', exist_ok=True)
+        
+        df.to_csv(output_file, index=False)
+        print(f"Data saved to {output_file}")
+        
+        # Print the first few rows of data for verification
+        print("\nSaved data preview:")
+        print(df.head().to_string())
+    else:
+        print("No profile data was collected. Check your profile URLs and network connectivity.")
+        
+        # Create an empty DataFrame with the required columns as a fallback
+        columns = [
+            'name', 'game_badges', 'special_game_badges', 'trivia_badges',
+            'skill_badges', 'lab_badges', 'arcade_points', 'milestone',
+            'bonus_points', 'total_points'
+        ]
+        df = pd.DataFrame(columns=columns)
+        
+        # Save the empty DataFrame
+        output_file = args.output_file
+        os.makedirs(os.path.dirname(os.path.abspath(output_file)) or '.', exist_ok=True)
+        df.to_csv(output_file, index=False)
+        print(f"Created empty data file at {output_file} due to no profiles being found")
