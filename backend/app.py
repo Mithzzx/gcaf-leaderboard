@@ -77,8 +77,8 @@ def run_schedule():
     """Background thread function to run the scheduler"""
     logger.info("Starting background scheduler")
     
-    # Schedule the scraper to run every hour
-    schedule.every(1).hours.do(run_scraper)
+    # Schedule the scraper to run every 10 minutes
+    schedule.every(10).minutes.do(run_scraper)
     
     # Schedule the keep-alive ping every 10 minutes
     schedule.every(10).minutes.do(keep_alive)
