@@ -11,11 +11,16 @@ import logging
 import requests
 
 # Set up logging
+log_dir = os.path.join(os.path.dirname(__file__), 'logs')
+# Create logs directory if it doesn't exist
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(os.path.dirname(__file__), 'logs', 'scraper_log.txt')),
+        logging.FileHandler(os.path.join(log_dir, 'scraper_log.txt')),
         logging.StreamHandler()
     ]
 )
@@ -37,7 +42,12 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # Path to the profiles data CSV file
-PROFILES_DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'profiles', 'profiles_data.csv')
+data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'profiles')
+# Create data directory if it doesn't exist
+if not os.path.exists(data_dir):
+    os.makedirs(data_dir, exist_ok=True)
+
+PROFILES_DATA_PATH = os.path.join(data_dir, 'profiles_data.csv')
 ROOT_PROFILES_DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'profiles_data.csv')
 
 # The app URL - will be set from environment or default to localhost for development
