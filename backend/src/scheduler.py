@@ -46,6 +46,12 @@ def run_scraper():
         # Also save to the project root for backward compatibility
         root_output_file = os.path.join(project_root, "profiles_data.csv")
         
+        # Log all file paths for debugging
+        logging.info(f"Script directory: {script_dir}")
+        logging.info(f"Scraper script: {scraper_script}")
+        logging.info(f"Output file: {output_file}")
+        logging.info(f"Root output file: {root_output_file}")
+        
         # Run the scraper script
         python_cmd = "python3" if os.name != "nt" else "python"
         result = subprocess.run(
@@ -58,11 +64,25 @@ def run_scraper():
         if result.returncode == 0:
             logging.info(f"Scraper completed successfully. Data saved to {output_file}")
             
+            # Check if the output file exists and has content
+            if os.path.exists(output_file):
+                file_size = os.path.getsize(output_file)
+                logging.info(f"Output file exists with size: {file_size} bytes")
+                
+                if file_size == 0:
+                    logging.warning("Output file is empty (0 bytes)")
+            else:
+                logging.error(f"Output file {output_file} was not created")
+            
             # Copy to the project root for backward compatibility
             try:
-                with open(output_file, 'r') as src, open(root_output_file, 'w') as dst:
-                    dst.write(src.read())
-                logging.info(f"Data also copied to {root_output_file}")
+                if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+                    with open(output_file, 'r') as src, open(root_output_file, 'w') as dst:
+                        content = src.read()
+                        dst.write(content)
+                    logging.info(f"Data copied to {root_output_file} ({len(content)} bytes)")
+                else:
+                    logging.warning(f"Not copying to root because source file is missing or empty")
             except Exception as e:
                 logging.error(f"Error copying data to root: {e}")
                 
@@ -74,9 +94,13 @@ def run_scraper():
             public_output_file = os.path.join(public_dir, "data.csv")
             try:
                 # Copy the file to public directory
-                with open(output_file, 'r') as src, open(public_output_file, 'w') as dst:
-                    dst.write(src.read())
-                logging.info(f"Data also copied to {public_output_file}")
+                if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+                    with open(output_file, 'r') as src, open(public_output_file, 'w') as dst:
+                        content = src.read()
+                        dst.write(content)
+                    logging.info(f"Data copied to {public_output_file} ({len(content)} bytes)")
+                else:
+                    logging.warning(f"Not copying to public because source file is missing or empty")
             except Exception as e:
                 logging.error(f"Error copying data to public dir: {e}")
             

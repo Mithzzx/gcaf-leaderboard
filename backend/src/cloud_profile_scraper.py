@@ -419,15 +419,14 @@ if __name__ == "__main__":
     profile_urls = [
         "https://www.cloudskillsboost.google/public_profiles/ddfc7723-216a-444c-ab34-cba5d7807296",
         "https://www.cloudskillsboost.google/public_profiles/104ba705-a4ed-422e-9599-e8cbcdfb0be6",
-        # Replace this placeholder with actual profile URLs
-        # "https://www.cloudskillsboost.google/public_profiles/another-profile-id", 
+        # Add more profile URLs here
     ]
 
     # List to store profile data
     profiles_data = []
 
     print("Scraping profiles...")
-    total_start_time = time.time()
+    start_time = time.time()
 
     for url in profile_urls:
         print(f"Scraping profile: {url}")
@@ -456,10 +455,10 @@ if __name__ == "__main__":
             })
 
     # Calculate and log total scraping time
-    total_end_time = time.time()
-    total_time_seconds = total_end_time - total_start_time
-    minutes, seconds = divmod(total_time_seconds, 60)
-    print(f"Scraping completed in {total_time_seconds:.2f} seconds")
+    end_time = time.time()
+    execution_time = end_time - start_time
+    minutes, seconds = divmod(execution_time, 60)
+    print(f"Scraping completed in {execution_time:.2f} seconds")
     print(f"Total scraping time: {int(minutes)} minutes and {int(seconds)} seconds")
     print(f"Found data for {len(profiles_data)} profiles")
 
@@ -483,6 +482,13 @@ if __name__ == "__main__":
         # Print the first few rows of data for verification
         print("\nSaved data preview:")
         print(df.head().to_string())
+        
+        # Verify file was created with content
+        if os.path.exists(output_file):
+            file_size = os.path.getsize(output_file)
+            print(f"Output file exists with size: {file_size} bytes")
+        else:
+            print(f"Warning: Output file {output_file} was not created!")
     else:
         print("No profile data was collected. Check your profile URLs and network connectivity.")
         

@@ -9,6 +9,7 @@ import time
 import schedule
 import logging
 import requests
+import shutil
 
 # Set up logging
 log_dir = os.path.join(os.path.dirname(__file__), 'logs')
@@ -41,14 +42,33 @@ except ImportError:
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-# Path to the profiles data CSV file
-data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'profiles')
-# Create data directory if it doesn't exist
-if not os.path.exists(data_dir):
-    os.makedirs(data_dir, exist_ok=True)
+# Get absolute paths to important directories
+PROJECT_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+DATA_DIR = os.path.join(PROJECT_ROOT, 'data', 'profiles')
+PUBLIC_DIR = os.path.join(PROJECT_ROOT, 'public')
 
-PROFILES_DATA_PATH = os.path.join(data_dir, 'profiles_data.csv')
-ROOT_PROFILES_DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'profiles_data.csv')
+# Log important paths
+logger.info(f"Project root: {PROJECT_ROOT}")
+logger.info(f"Data directory: {DATA_DIR}")
+logger.info(f"Public directory: {PUBLIC_DIR}")
+
+# Create directories if they don't exist
+if not os.path.exists(DATA_DIR):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    logger.info(f"Created data directory: {DATA_DIR}")
+
+if not os.path.exists(PUBLIC_DIR):
+    os.makedirs(PUBLIC_DIR, exist_ok=True)
+    logger.info(f"Created public directory: {PUBLIC_DIR}")
+
+# Path to the profiles data CSV files
+PROFILES_DATA_PATH = os.path.join(DATA_DIR, 'profiles_data.csv')
+ROOT_PROFILES_DATA_PATH = os.path.join(PROJECT_ROOT, 'profiles_data.csv')
+PUBLIC_DATA_PATH = os.path.join(PUBLIC_DIR, 'data.csv')
+
+logger.info(f"Profiles data path: {PROFILES_DATA_PATH}")
+logger.info(f"Root profiles data path: {ROOT_PROFILES_DATA_PATH}")
+logger.info(f"Public data path: {PUBLIC_DATA_PATH}")
 
 # The app URL - will be set from environment or default to localhost for development
 APP_URL = os.environ.get('APP_URL', 'http://localhost:5000')
@@ -73,24 +93,91 @@ def keep_alive():
         logger.error(f"Keep-alive ping failed: {str(e)}")
         return False
 
+def ensure_csv_files():
+    """
+    Make sure all CSV files are consistent by copying the most recent one
+    to all required locations
+    """
+    try:
+        # Determine the most recent CSV file
+        files_to_check = [
+            (PROFILES_DATA_PATH, os.path.exists(PROFILES_DATA_PATH) and os.path.getmtime(PROFILES_DATA_PATH) if os.path.exists(PROFILES_DATA_PATH) else 0),
+            (ROOT_PROFILES_DATA_PATH, os.path.exists(ROOT_PROFILES_DATA_PATH) and os.path.getmtime(ROOT_PROFILES_DATA_PATH) if os.path.exists(ROOT_PROFILES_DATA_PATH) else 0),
+            (PUBLIC_DATA_PATH, os.path.exists(PUBLIC_DATA_PATH) and os.path.getmtime(PUBLIC_DATA_PATH) if os.path.exists(PUBLIC_DATA_PATH) else 0)
+        ]
+        
+        # Sort by modification time (most recent first)
+        files_to_check.sort(key=lambda x: x[1], reverse=True)
+        
+        # Get the most recent file
+        most_recent_file = files_to_check[0][0] if files_to_check[0][1] > 0 else None
+        
+        if most_recent_file:
+            logger.info(f"Most recent CSV file: {most_recent_file}")
+            
+            # Copy to all locations
+            for dest_file, _ in files_to_check:
+                if dest_file != most_recent_file:
+                    try:
+                        shutil.copy2(most_recent_file, dest_file)
+                        logger.info(f"Copied {most_recent_file} to {dest_file}")
+                    except Exception as e:
+                        logger.error(f"Error copying {most_recent_file} to {dest_file}: {e}")
+        else:
+            logger.warning("No CSV files found to synchronize")
+            
+    except Exception as e:
+        logger.error(f"Error ensuring CSV files consistency: {e}")
+
+def custom_run_scraper():
+    """
+    Custom wrapper for run_scraper that ensures CSV files are properly distributed
+    after scraping
+    """
+    try:
+        logger.info("Running custom_run_scraper wrapper")
+        # Track time
+        start_time = time.time()
+        
+        # Run the actual scraper
+        run_scraper()
+        
+        # Calculate execution time
+        execution_time = time.time() - start_time
+        minutes, seconds = divmod(execution_time, 60)
+        logger.info(f"Scraper completed in {int(minutes)} minutes and {int(seconds)} seconds")
+        
+        # Ensure all CSV files are updated
+        logger.info("Ensuring all CSV files are consistent")
+        ensure_csv_files()
+        
+        # Check if files exist and log their sizes
+        files_to_check = [PROFILES_DATA_PATH, ROOT_PROFILES_DATA_PATH, PUBLIC_DATA_PATH]
+        for file_path in files_to_check:
+            if os.path.exists(file_path):
+                file_size = os.path.getsize(file_path)
+                logger.info(f"CSV file {file_path} exists with size {file_size} bytes")
+            else:
+                logger.warning(f"CSV file {file_path} does not exist")
+        
+    except Exception as e:
+        logger.error(f"Error in custom_run_scraper: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+
 def run_schedule():
     """Background thread function to run the scheduler"""
     logger.info("Starting background scheduler")
     
     # Schedule the scraper to run every 10 minutes
-    schedule.every(10).minutes.do(run_scraper)
+    schedule.every(10).minutes.do(custom_run_scraper)
     
     # Schedule the keep-alive ping every 10 minutes
     schedule.every(10).minutes.do(keep_alive)
     
     # Also run immediately on startup
     logger.info("Running initial scraper job")
-    start_time = time.time()
-    run_scraper()
-    end_time = time.time()
-    execution_time = end_time - start_time
-    minutes, seconds = divmod(execution_time, 60)
-    logger.info(f"Initial scraper job completed in {int(minutes)} minutes and {int(seconds)} seconds")
+    custom_run_scraper()
     
     # Initial keep-alive ping
     logger.info("Performing initial keep-alive ping")
@@ -132,7 +219,8 @@ def root():
             "leaderboard": "/api/leaderboard",
             "csv": "/api/csv",
             "health": "/api/health",
-            "run-scraper": "/api/run-scraper (POST)"
+            "run-scraper": "/api/run-scraper (POST)",
+            "sync-csv": "/api/sync-csv (POST)"
         }
     })
 
@@ -140,13 +228,23 @@ def root():
 def get_leaderboard():
     """Return leaderboard data as JSON"""
     try:
+        # First ensure CSV files are in sync
+        ensure_csv_files()
+        
         # Try to read from the primary location
         if os.path.exists(PROFILES_DATA_PATH):
             df = pd.read_csv(PROFILES_DATA_PATH)
+            logger.info(f"Loaded leaderboard data from {PROFILES_DATA_PATH}")
         # Fall back to root location if primary doesn't exist
         elif os.path.exists(ROOT_PROFILES_DATA_PATH):
             df = pd.read_csv(ROOT_PROFILES_DATA_PATH)
+            logger.info(f"Loaded leaderboard data from {ROOT_PROFILES_DATA_PATH}")
+        # Try public location as a last resort
+        elif os.path.exists(PUBLIC_DATA_PATH):
+            df = pd.read_csv(PUBLIC_DATA_PATH)
+            logger.info(f"Loaded leaderboard data from {PUBLIC_DATA_PATH}")
         else:
+            logger.error("Leaderboard data not found in any location")
             return jsonify({"error": "Leaderboard data not found"}), 404
         
         # Convert DataFrame to list of dictionaries
@@ -160,10 +258,15 @@ def get_leaderboard():
 def get_csv():
     """Return the raw CSV file"""
     try:
+        # First ensure CSV files are in sync
+        ensure_csv_files()
+        
         if os.path.exists(PROFILES_DATA_PATH):
             return send_file(PROFILES_DATA_PATH, mimetype='text/csv')
         elif os.path.exists(ROOT_PROFILES_DATA_PATH):
             return send_file(ROOT_PROFILES_DATA_PATH, mimetype='text/csv')
+        elif os.path.exists(PUBLIC_DATA_PATH):
+            return send_file(PUBLIC_DATA_PATH, mimetype='text/csv')
         else:
             return jsonify({"error": "CSV file not found"}), 404
     except Exception as e:
@@ -181,16 +284,11 @@ def trigger_scraper():
     try:
         # In production, you might want to add authentication here
         logger.info("Manual scraper run triggered via API")
-        start_time = time.time()
         
         # Run in a separate thread to not block the response
         def run_scraper_thread():
             try:
-                run_scraper()
-                end_time = time.time()
-                execution_time = end_time - start_time
-                minutes, seconds = divmod(execution_time, 60)
-                logger.info(f"Manual scraper run completed in {int(minutes)} minutes and {int(seconds)} seconds")
+                custom_run_scraper()
             except Exception as e:
                 logger.error(f"Error in manual scraper thread: {str(e)}")
         
@@ -201,6 +299,17 @@ def trigger_scraper():
         return jsonify({"status": "Scraper started", "message": "The scraper is running in the background. Check logs for completion."}), 200
     except Exception as e:
         logger.error(f"Error triggering scraper: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/sync-csv', methods=['POST'])
+def sync_csv_files():
+    """Synchronize CSV files across all locations"""
+    try:
+        logger.info("CSV synchronization triggered via API")
+        ensure_csv_files()
+        return jsonify({"status": "success", "message": "CSV files synchronized"}), 200
+    except Exception as e:
+        logger.error(f"Error synchronizing CSV files: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
