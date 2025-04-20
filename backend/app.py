@@ -55,7 +55,11 @@ APP_URL = os.environ.get('APP_URL', 'http://localhost:5000')
 
 # Make sure APP_URL has a proper scheme (http:// or https://)
 if APP_URL and not (APP_URL.startswith('http://') or APP_URL.startswith('https://')):
-    APP_URL = f"https://{APP_URL}"
+    # Check if it's a Render service ID
+    if len(APP_URL) == 32 and all(c in '0123456789abcdef' for c in APP_URL):
+        APP_URL = f"https://{APP_URL}.onrender.com"
+    else:
+        APP_URL = f"https://{APP_URL}"
 
 logger.info(f"Using APP_URL: {APP_URL}")
 

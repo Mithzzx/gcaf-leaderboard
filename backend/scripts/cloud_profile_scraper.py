@@ -402,45 +402,81 @@ if __name__ == "__main__":
                       help="Output CSV file path (default: profiles_data.csv)")
     args = parser.parse_args()
     
-    # List of profile URLs
-    profile_urls = [
-        # Add more URLs as needed
-    ]
+    try:
+        # List of profile URLs
+        profile_urls = [
+            # Add more URLs as needed
+        ]
 
-    # List to store profile data
-    profiles_data = []
+        # List to store profile data
+        profiles_data = []
 
-    print("Scraping profiles...")
-    start_time = time.time()
+        print("Scraping profiles...")
+        start_time = time.time()
 
-    for url in profile_urls:
-        print(f"Scraping profile: {url}")
-        profile_data = scrape_cloud_profile(url)
+        for url in profile_urls:
+            print(f"Scraping profile: {url}")
+            profile_data = scrape_cloud_profile(url)
 
-        if profile_data:
-            # Add the profile data to the list
-            profiles_data.append({
-                "name": profile_data.get("name", "N/A"),
-                "game_badges": profile_data.get("badge_counts", {}).get("game_badges", 0),
-                "special_game_badges": profile_data.get("badge_counts", {}).get("special_game_badges", 0),
-                "trivia_badges": profile_data.get("badge_counts", {}).get("trivia_badges", 0),
-                "skill_badges": profile_data.get("badge_counts", {}).get("skill_badges", 0),
-                "lab_badges": profile_data.get("badge_counts", {}).get("lab_badges", 0),
-                "arcade_points": calculate_points(profile_data.get("badge_counts", {})),
-                "milestone": calculate_milestone(profile_data.get("badge_counts", {})).get("milestone", "No Milestone"),
-                "bonus_points": calculate_milestone(profile_data.get("badge_counts", {})).get("bonus_points", 0),
-                "total_points": 0,
-            })
+            if profile_data:
+                # Add the profile data to the list
+                profiles_data.append({
+                    "name": profile_data.get("name", "N/A"),
+                    "game_badges": profile_data.get("badge_counts", {}).get("game_badges", 0),
+                    "special_game_badges": profile_data.get("badge_counts", {}).get("special_game_badges", 0),
+                    "trivia_badges": profile_data.get("badge_counts", {}).get("trivia_badges", 0),
+                    "skill_badges": profile_data.get("badge_counts", {}).get("skill_badges", 0),
+                    "lab_badges": profile_data.get("badge_counts", {}).get("lab_badges", 0),
+                    "arcade_points": calculate_points(profile_data.get("badge_counts", {})),
+                    "milestone": calculate_milestone(profile_data.get("badge_counts", {})).get("milestone", "No Milestone"),
+                    "bonus_points": calculate_milestone(profile_data.get("badge_counts", {})).get("bonus_points", 0),
+                    "total_points": (calculate_points(profile_data.get("badge_counts", {})) + 
+                                    calculate_milestone(profile_data.get("badge_counts", {})).get("bonus_points", 0))
+                })
 
+        print(f"Scraping completed in {time.time() - start_time:.2f} seconds")
 
-    print(f"Scraping completed in {time.time() - start_time:.2f} seconds")
+        # Create a DataFrame with the required columns
+        columns = [
+            'name', 'game_badges', 'special_game_badges', 'trivia_badges',
+            'skill_badges', 'lab_badges', 'arcade_points', 'milestone',
+            'bonus_points', 'total_points'
+        ]
+        
+        if profiles_data:
+            # Create DataFrame from existing data
+            df = pd.DataFrame(profiles_data)
+            # Sort by total points if data exists
+            df.sort_values(by=['total_points'], ascending=False, inplace=True)
+        else:
+            # Create empty DataFrame with specified columns
+            print("No profiles were scraped. Creating empty DataFrame with required columns.")
+            df = pd.DataFrame(columns=columns)
 
-    # Convert the list of profiles to a DataFrame
-    df = pd.DataFrame(profiles_data)
-    df['total_points'] = df['arcade_points'] + df['bonus_points']
-    df.sort_values(by=['total_points'], ascending=False, inplace=True)
-
-    # Save the DataFrame to a CSV file
-    output_file = args.output_file
-    df.to_csv(output_file, index=False)
-    print(f"Data saved to {output_file}")
+        # Save the DataFrame to a CSV file
+        output_file = args.output_file
+        
+        # Create parent directory if it doesn't exist
+        os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
+        
+        df.to_csv(output_file, index=False)
+        print(f"Data saved to {output_file}")
+        
+    except Exception as e:
+        print(f"An error occurred in the scraper: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Create an empty DataFrame with the required columns as a fallback
+        columns = [
+            'name', 'game_badges', 'special_game_badges', 'trivia_badges',
+            'skill_badges', 'lab_badges', 'arcade_points', 'milestone',
+            'bonus_points', 'total_points'
+        ]
+        df = pd.DataFrame(columns=columns)
+        
+        # Save the empty DataFrame to the output file
+        output_file = args.output_file
+        os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
+        df.to_csv(output_file, index=False)
+        print(f"Created empty data file at {output_file} due to error")
