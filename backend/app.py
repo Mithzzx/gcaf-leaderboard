@@ -88,7 +88,8 @@ def run_schedule():
 # Start the background scheduler in a separate thread
 scheduler_thread = None
 
-@app.before_first_request
+# Replace the before_first_request decorator (removed in Flask 2.0+)
+# with an alternative approach that works in newer Flask versions
 def start_scheduler():
     """Start the scheduler when the app starts serving requests"""
     global scheduler_thread
@@ -98,6 +99,13 @@ def start_scheduler():
         scheduler_thread.daemon = True  # Thread will exit when the main process exits
         scheduler_thread.start()
         logger.info("Background scheduler thread started")
+
+# Register with Flask to start on first request
+@app.before_request
+def before_request():
+    start_scheduler()
+    # Remove the function after it runs once
+    app.before_request_funcs[None].remove(before_request)
 
 @app.route('/api/leaderboard', methods=['GET'])
 def get_leaderboard():
