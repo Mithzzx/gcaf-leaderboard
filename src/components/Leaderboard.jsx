@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback, Suspense } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import Papa from "papaparse";
 import ReactConfetti from "react-confetti";
 
@@ -6,12 +6,12 @@ export default function Leaderboard() {
   const [participants, setParticipants] = useState([]);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [windowDimensions, setWindowDimensions] = useState({
     width: window.innerWidth,
     height: window.innerHeight
   });
-  
-  // Track window dimensions for confetti - optimized with debounce
+
   useEffect(() => {
     let timeoutId = null;
     const handleResize = () => {
@@ -23,127 +23,113 @@ export default function Leaderboard() {
         });
       }, 100);
     };
-    
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
       clearTimeout(timeoutId);
     };
   }, []);
-  
-  // Load data with optimized parsing configuration
+
+  const loadData = useCallback(async (abortController) => {
+    setIsLoading(true);
+    try {
+      // Try to load from the following locations in order:
+      // 1. Root directory (where the scraper might save it)
+      // 2. Data directory (preferred location with new structure)
+      // 3. Public directory (fallback)
+      let response;
+      const dataSources = [
+        "/profiles_data.csv",
+        "/data/profiles/profiles_data.csv",
+        "/public/data.csv"
+      ];
+      
+      for (const source of dataSources) {
+        try {
+          response = await fetch(source, { signal: abortController.signal });
+          if (response.ok) {
+            console.log(`Successfully loaded data from ${source}`);
+            break;
+          }
+        } catch (e) {
+          console.log(`Failed to load from ${source}: ${e.message}`);
+        }
+      }
+      
+      if (!response || !response.ok) {
+        throw new Error("Could not load data from any source");
+      }
+      
+      const csvText = await response.text();
+      setLastUpdated(new Date());
+
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        fastMode: true,
+        complete: function (results) {
+          const processedData = results.data.map((row) => ({
+            name: row["name"] || "Unknown",
+            arcade: parseInt(row["game_badges"]) || 0,
+            specialArcade: parseInt(row["special_game_badges"]) || 0,
+            trivia: parseInt(row["trivia_badges"]) || 0,
+            skill: parseInt(row["skill_badges"]) || 0,
+            labs: parseInt(row["lab_badges"]) || 0,
+            score: parseInt(row["total_points"]) || 0,
+            milestone: row["milestone"] || "None",
+          }));
+
+          const validData = processedData.filter(p => !isNaN(p.score));
+          setParticipants(validData);
+          setIsLoading(false);
+        },
+        error: (error) => {
+          console.error("Error parsing CSV:", error);
+          setIsLoading(false);
+        }
+      });
+    } catch (error) {
+      if (!abortController.signal.aborted) {
+        console.error("Failed to load data:", error);
+        setIsLoading(false);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const abortController = new AbortController();
     
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        // Use fetch API directly for better control over the loading process
-        const response = await fetch("/data.csv", { signal: abortController.signal });
-        const csvText = await response.text();
-        
-        Papa.parse(csvText, {
-          header: true,
-          skipEmptyLines: true,
-          fastMode: true, // Use fast mode for numeric data
-          complete: function (results) {
-            const withScores = results.data.map((row) => {
-              const arcade = parseInt(row["# of Arcade Games Completed"]) || 0;
-              const trivia = parseInt(row["# of Trivia Games Completed"]) || 0;
-              const skill = parseInt(row["# of Skill Badges Completed"]) || 0;
-              const labs = parseInt(row["# of Lab-free Courses Completed"]) || 0;
-              
-              let score = arcade + trivia + Math.floor(skill / 2);
-              let milestone = "None";
-              
-              if (arcade >= 10 && trivia >= 8 && skill >= 44 && labs >= 16) {
-                score += 25;
-                milestone = "M4";
-              } else if (arcade >= 8 && trivia >= 7 && skill >= 30 && labs >= 12) {
-                score += 15;
-                milestone = "M3";
-              } else if (arcade >= 6 && trivia >= 6 && skill >= 20 && labs >= 8) {
-                score += 8;
-                milestone = "M2";
-              } else if (arcade >= 4 && trivia >= 4 && skill >= 10 && labs >= 4) {
-                score += 2;
-                milestone = "M1";
-              }
-              
-              return {
-                name: row["User Name"] || "Unknown",
-                arcade,
-                trivia,
-                skill,
-                labs,
-                score,
-                milestone,
-                profile: row["Google Cloud Skills Boost Profile URL"],
-              };
-            });
-            
-            const sorted = withScores
-              .filter((p) => !isNaN(p.score))
-              .sort((a, b) => b.score - a.score);
-            
-            setParticipants(sorted);
-            setIsLoading(false);
-          },
-          error: (error) => {
-            console.error("Error parsing CSV:", error);
-            setIsLoading(false);
-          }
-        });
-      } catch (error) {
-        if (!abortController.signal.aborted) {
-          console.error("Failed to load data:", error);
-          setIsLoading(false);
-        }
-      }
-    };
+    // Load data immediately
+    loadData(abortController);
     
-    loadData();
+    // Set up interval to refresh data every 5 minutes
+    const intervalId = setInterval(() => {
+      loadData(new AbortController());
+    }, 5 * 60 * 1000); // 5 minutes in milliseconds
     
     return () => {
       abortController.abort();
+      clearInterval(intervalId);
     };
-  }, []);
-  
-  // Close the modal when clicking outside - memoized handler for better performance
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (selectedParticipant && !event.target.closest('.modal-content') && !event.target.closest('.view-details-btn')) {
-        setSelectedParticipant(null);
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [selectedParticipant]);
+  }, [loadData]);
 
-  // Function to handle selecting a participant for detail view
   const handleSelectParticipant = useCallback((participant, index) => {
-    setSelectedParticipant({...participant, rank: index});
+    setSelectedParticipant({ ...participant, rank: index });
   }, []);
 
-  // Helper function to get trophy emoji based on rank
   const getTrophyEmoji = useCallback((index) => {
-    if (index === 0) return "🥇"; // Gold medal for 1st
-    if (index === 1) return "🥈"; // Silver medal for 2nd
-    if (index === 2) return "🥉"; // Bronze medal for 3rd
-    if (index < 10) return "⭐"; // Trophy for top 10
+    if (index === 0) return "🥇";
+    if (index === 1) return "🥈";
+    if (index === 2) return "🥉";
+    if (index < 10) return "⭐";
     return "";
   }, []);
 
-  // Helper function to truncate names if they are too long
   const truncateName = useCallback((name, maxLength = 16) => {
     if (!name) return "Unknown";
     return name.length > maxLength ? name.substring(0, maxLength) + "..." : name;
   }, []);
 
-  // Enhanced confetti component with better performance and visual effects
   const ConfettiEffect = ({ isTop3 }) => {
     const confettiProps = useMemo(() => ({
       width: windowDimensions.width,
@@ -171,24 +157,17 @@ export default function Leaderboard() {
     return <ReactConfetti {...confettiProps} />;
   };
 
-  // Render the details modal
   const renderDetailsModal = () => {
     if (!selectedParticipant) return null;
-    
-    // Determine if the participant is in top 10 or top 3
     const isTop3 = selectedParticipant.rank < 3;
     const isTop10 = selectedParticipant.rank < 10;
     const modalClass = isTop10 ? "modal-content top-modal" : "modal-content";
     const headerClass = isTop10 ? "modal-header top-header" : "modal-header";
-    
-    // Get the appropriate trophy emoji for the header
     const rankTrophy = getTrophyEmoji(selectedParticipant.rank);
-    
+
     return (
       <div className="modal-overlay">
-        {/* Enhanced Confetti for top performers */}
         {isTop10 && <ConfettiEffect isTop3={isTop3} />}
-        
         <div className={modalClass}>
           <div className={headerClass}>
             <h3>{rankTrophy} {selectedParticipant.name}</h3>
@@ -200,30 +179,13 @@ export default function Leaderboard() {
             </button>
           </div>
           <div className="modal-body">
-            <div className="detail-row">
-              <span>Arcade Games:</span>
-              <span>{selectedParticipant.arcade || 0}</span>
-            </div>
-            <div className="detail-row">
-              <span>Trivia Games:</span>
-              <span>{selectedParticipant.trivia || 0}</span>
-            </div>
-            <div className="detail-row">
-              <span>Skill Badges:</span>
-              <span>{selectedParticipant.skill || 0}</span>
-            </div>
-            <div className="detail-row">
-              <span>Lab-free Courses:</span>
-              <span>{selectedParticipant.labs || 0}</span>
-            </div>
-            <div className="detail-row highlight">
-              <span>Total Points:</span>
-              <span>{selectedParticipant.score || 0}</span>
-            </div>
-            <div className="detail-row highlight">
-              <span>Milestone:</span>
-              <span>{selectedParticipant.milestone || "None"}</span>
-            </div>
+            <div className="detail-row"><span>Arcade Badges:</span><span>{selectedParticipant.arcade}</span></div>
+            <div className="detail-row"><span>Special Arcade Badges:</span><span>{selectedParticipant.specialArcade}</span></div>
+            <div className="detail-row"><span>Trivia Badges:</span><span>{selectedParticipant.trivia}</span></div>
+            <div className="detail-row"><span>Skill Badges:</span><span>{selectedParticipant.skill}</span></div>
+            <div className="detail-row"><span>Lab-free Courses:</span><span>{selectedParticipant.labs}</span></div>
+            <div className="detail-row highlight"><span>Total Points:</span><span>{selectedParticipant.score}</span></div>
+            <div className="detail-row highlight"><span>Milestone:</span><span>{selectedParticipant.milestone}</span></div>
             {isTop10 && (
               <div className={isTop3 ? "top-badge elite-badge" : "top-badge"}>
                 {isTop3 ? 
@@ -237,10 +199,8 @@ export default function Leaderboard() {
     );
   };
 
-  // Memoize the table rendering for better performance
   const renderTable = useMemo(() => (
     <div className="table-wrapper">
-      {/* Mobile view table (only visible on small screens) */}
       <table className="mobile-table">
         <thead>
           <tr>
@@ -268,27 +228,28 @@ export default function Leaderboard() {
           ))}
         </tbody>
       </table>
-      
-      {/* Desktop view table (only visible on larger screens) */}
+
       <table className="desktop-table">
         <thead>
           <tr>
             <th style={{ backgroundColor: "#428548", color: "#fff" }}>Rank</th>
             <th style={{ backgroundColor: "#34A853", color: "#fff" }}>Name</th>
             <th style={{ backgroundColor: "#fbbc05", color: "#fff" }}>Arcade</th>
-            <th style={{ backgroundColor: "#ea4335", color: "#fff" }}>Trivia</th>
-            <th style={{ backgroundColor: "#428548", color: "#fff" }}>Skill</th>              
-            <th style={{ backgroundColor: "#34A853", color: "#fff" }}>Labs</th>
-            <th style={{ backgroundColor: "#fbbc05", color: "#fff" }}>Points</th>
-            <th style={{ backgroundColor: "#ea4335", color: "#fff" }}>Milestone</th>
+            <th style={{ backgroundColor: "#ea4335", color: "#fff" }}>Special</th>
+            <th style={{ backgroundColor: "#428548", color: "#fff" }}>Trivia</th>              
+            <th style={{ backgroundColor: "#34A853", color: "#fff" }}>Skill</th>
+            <th style={{ backgroundColor: "#fbbc05", color: "#fff" }}>Labs</th>
+            <th style={{ backgroundColor: "#ea4335", color: "#fff" }}>Points</th>
+            <th style={{ backgroundColor: "#4285f4", color: "#fff" }}>Milestone</th>
           </tr>
         </thead>
         <tbody>
           {participants.map((p, index) => (
             <tr key={`desktop-${index}`}>
               <td>{index + 1}</td>
-              <td style={{textAlign: "left"}}>{getTrophyEmoji(index)}{p.name}</td>
+              <td style={{ textAlign: "left" }}>{getTrophyEmoji(index)}{p.name}</td>
               <td>{p.arcade}</td>
+              <td>{p.specialArcade}</td>
               <td>{p.trivia}</td>
               <td>{p.skill}</td>
               <td>{p.labs}</td>
@@ -310,10 +271,17 @@ export default function Leaderboard() {
             <p>Loading leaderboard data...</p>
           </div>
         ) : (
-          renderTable
+          <>
+            {renderTable}
+            {lastUpdated && (
+              <div className="last-updated">
+                <small>Last updated: {lastUpdated.toLocaleString()}</small>
+                <small>Data refreshes every 10 minutes</small>
+              </div>
+            )}
+          </>
         )}
       </div>
-      
       {renderDetailsModal()}
     </>
   );

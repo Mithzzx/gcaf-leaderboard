@@ -1,42 +1,84 @@
 # GCAF Leaderboard
 
-## Overview
-This project displays a leaderboard for the Google Cloud Arcade Festival (GCAF), tracking participants' progress across various activities.
+A leaderboard application to track and display Google Cloud Arcade Festival participant progress.
 
-## Features
-- Visual representation of participant achievements
-- Tracking of arcade games, trivia games, skill badges, and lab-free courses
-- Responsive design for all devices
+## Project Structure
 
-## Setup Instructions
-1. Clone the repository
-```bash
-git clone https://github.com/kabillanta/gcaf-leaderboard.git
-cd gcaf-leaderboard
+```
+gcaf-leaderboard/
+├── backend/                 # Backend code
+│   ├── logs/                # Log files
+│   ├── requirements.txt     # Python dependencies
+│   └── src/                 # Backend source code
+│       ├── cloud_profile_scraper.py  # Script to scrape cloud profiles
+│       ├── scheduler.py     # Script to run scraper
+│       └── runthisbeforepush.py  # Pre-deployment script
+├── data/                    # Data storage
+│   ├── backup/              # Backup data files
+│   └── profiles/            # Profile data
+│       └── profiles_data.csv # Generated data file used by frontend
+├── public/                  # Static files
+│   └── data.csv             # Backup static data file
+├── src/                     # Frontend source code
+│   ├── components/          # React components
+│   │   └── Leaderboard.jsx  # Main leaderboard display component
+│   ├── App.jsx              # Main React application
+│   ├── App.css              # Application styles
+│   ├── main.jsx             # React entry point
+│   └── index.css            # Global styles
+├── profiles_data.csv        # Generated data file (root level for compatibility)
+├── start_scraper.sh         # Script to start the data collection
+└── stop_scraper.sh          # Script to stop the data collection
 ```
 
-2. Install dependencies
+## Data Flow
+
+1. **Data Collection**: 
+   - `cloud_profile_scraper.py` scrapes participant profiles from Google Cloud Skills Boost
+   - Extracts game badges, special game badges, trivia badges, skill badges, and lab badges
+   - Calculates points and milestone achievements
+
+2. **Data Storage**:
+   - Scraped data is saved to multiple locations:
+     - `/data/profiles/profiles_data.csv` (primary location)
+     - `/profiles_data.csv` (root, for backwards compatibility)
+     - `/public/data.csv` (for direct serving)
+
+3. **Data Display**:
+   - `Leaderboard.jsx` reads the data from any of the above locations
+   - Displays participant rankings, scores, and achievements in a clean UI
+   - Updates automatically when the CSV file changes
+
+## How to Run
+
+### Frontend (React)
+
 ```bash
+# Install dependencies
 npm install
-# or
-yarn install
-```
 
-3. Process the data
-```bash
-cd src/scripts
-python runthisbeforepush.py
-```
-
-4. Start the development server
-```bash
+# Run development server
 npm run dev
-# or
-yarn dev
+
+# Build for production
+npm run build
 ```
 
-## Data Processing
-The system processes CSV reports from GCAF to generate the leaderboard data. The script in `src/scripts/runthisbeforepush.py` cleans and formats the data for display.
+### Backend (Python Scraper)
+
+```bash
+# Install Python dependencies
+pip install -r backend/requirements.txt
+
+# Run the scraper
+./start_scraper.sh
+```
+
+## Implementation Details
+
+- The frontend is built with React and Vite
+- The scraper is built with Python using BeautifulSoup for HTML parsing
+- The data is stored in CSV format for easy processing
 
 ## 👥 Contributors
 

@@ -1,0 +1,6 @@
+2025-04-20 16:19:54,467 - INFO - Starting scheduler for cloud profile scraper
+2025-04-20 16:19:54,467 - INFO - Starting cloud profile scraper...
+2025-04-20 16:19:54,470 - ERROR - Error running scraper: [Errno 2] No such file or directory: 'python'
+2025-04-20 16:19:54,471 - INFO - Scheduler running. Press Ctrl+C to exit.
+2025-04-20 16:29:54,859 - INFO - Starting cloud profile scraper...
+2025-04-20 16:29:54,871 - ERROR - Error running scraper: [Errno 2] No such file or directory: 'python'
