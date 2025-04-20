@@ -47,6 +47,13 @@ PROJECT_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 DATA_DIR = os.path.join(PROJECT_ROOT, 'data', 'profiles')
 PUBLIC_DIR = os.path.join(PROJECT_ROOT, 'public')
 
+# On Render, use the environment path if it exists
+if os.environ.get('RENDER') == 'true' or os.path.exists('/opt/render'):
+    # We're on Render
+    PROJECT_ROOT = '/opt/render/project/src'
+    DATA_DIR = os.path.join(PROJECT_ROOT, 'data', 'profiles')
+    PUBLIC_DIR = os.path.join(PROJECT_ROOT, 'public')
+
 # Log important paths
 logger.info(f"Project root: {PROJECT_ROOT}")
 logger.info(f"Data directory: {DATA_DIR}")
@@ -65,6 +72,11 @@ if not os.path.exists(PUBLIC_DIR):
 PROFILES_DATA_PATH = os.path.join(DATA_DIR, 'profiles_data.csv')
 ROOT_PROFILES_DATA_PATH = os.path.join(PROJECT_ROOT, 'profiles_data.csv')
 PUBLIC_DATA_PATH = os.path.join(PUBLIC_DIR, 'data.csv')
+
+# On Render, also check for data directly in the data folder
+if os.environ.get('RENDER') == 'true' or os.path.exists('/opt/render'):
+    RENDER_DATA_PATH = os.path.join(PROJECT_ROOT, 'data', 'profiles_data.csv')
+    RENDER_PUBLIC_DATA_PATH = os.path.join(PROJECT_ROOT, 'public', 'profiles_data.csv')
 
 logger.info(f"Profiles data path: {PROFILES_DATA_PATH}")
 logger.info(f"Root profiles data path: {ROOT_PROFILES_DATA_PATH}")
@@ -99,26 +111,67 @@ def ensure_csv_files():
     to all required locations
     """
     try:
-        # Determine the most recent CSV file
+        # Build a list of all possible CSV file locations
         files_to_check = [
             (PROFILES_DATA_PATH, os.path.exists(PROFILES_DATA_PATH) and os.path.getmtime(PROFILES_DATA_PATH) if os.path.exists(PROFILES_DATA_PATH) else 0),
             (ROOT_PROFILES_DATA_PATH, os.path.exists(ROOT_PROFILES_DATA_PATH) and os.path.getmtime(ROOT_PROFILES_DATA_PATH) if os.path.exists(ROOT_PROFILES_DATA_PATH) else 0),
             (PUBLIC_DATA_PATH, os.path.exists(PUBLIC_DATA_PATH) and os.path.getmtime(PUBLIC_DATA_PATH) if os.path.exists(PUBLIC_DATA_PATH) else 0)
         ]
         
+        # Add Render-specific paths if they exist
+        if os.environ.get('RENDER') == 'true' or os.path.exists('/opt/render'):
+            render_paths = [
+                (os.path.join(PROJECT_ROOT, 'data', 'profiles_data.csv'), 
+                 os.path.exists(os.path.join(PROJECT_ROOT, 'data', 'profiles_data.csv')) and 
+                 os.path.getmtime(os.path.join(PROJECT_ROOT, 'data', 'profiles_data.csv')) 
+                 if os.path.exists(os.path.join(PROJECT_ROOT, 'data', 'profiles_data.csv')) else 0),
+                
+                (os.path.join(PROJECT_ROOT, 'public', 'profiles_data.csv'), 
+                 os.path.exists(os.path.join(PROJECT_ROOT, 'public', 'profiles_data.csv')) and 
+                 os.path.getmtime(os.path.join(PROJECT_ROOT, 'public', 'profiles_data.csv')) 
+                 if os.path.exists(os.path.join(PROJECT_ROOT, 'public', 'profiles_data.csv')) else 0)
+            ]
+            files_to_check.extend(render_paths)
+        
         # Sort by modification time (most recent first)
         files_to_check.sort(key=lambda x: x[1], reverse=True)
         
-        # Get the most recent file
-        most_recent_file = files_to_check[0][0] if files_to_check[0][1] > 0 else None
-        
+        # Get the most recent file that actually exists
+        most_recent_file = None
+        for file_path, mtime in files_to_check:
+            if os.path.exists(file_path) and mtime > 0:
+                file_size = os.path.getsize(file_path)
+                logger.info(f"Found CSV file: {file_path} (Size: {file_size} bytes)")
+                
+                if file_size > 0:
+                    most_recent_file = file_path
+                    logger.info(f"Selected most recent non-empty CSV file: {most_recent_file}")
+                    break
+                
         if most_recent_file:
             logger.info(f"Most recent CSV file: {most_recent_file}")
             
             # Copy to all locations
-            for dest_file, _ in files_to_check:
+            destinations = [
+                PROFILES_DATA_PATH, 
+                ROOT_PROFILES_DATA_PATH, 
+                PUBLIC_DATA_PATH
+            ]
+            
+            # Add Render-specific destinations
+            if os.environ.get('RENDER') == 'true' or os.path.exists('/opt/render'):
+                destinations.extend([
+                    os.path.join(PROJECT_ROOT, 'data', 'profiles_data.csv'),
+                    os.path.join(PROJECT_ROOT, 'public', 'profiles_data.csv')
+                ])
+            
+            for dest_file in destinations:
                 if dest_file != most_recent_file:
                     try:
+                        # Ensure the directory exists
+                        os.makedirs(os.path.dirname(dest_file), exist_ok=True)
+                        
+                        # Copy the file
                         shutil.copy2(most_recent_file, dest_file)
                         logger.info(f"Copied {most_recent_file} to {dest_file}")
                     except Exception as e:
@@ -128,6 +181,8 @@ def ensure_csv_files():
             
     except Exception as e:
         logger.error(f"Error ensuring CSV files consistency: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
 
 def custom_run_scraper():
     """
@@ -231,25 +286,47 @@ def get_leaderboard():
         # First ensure CSV files are in sync
         ensure_csv_files()
         
-        # Try to read from the primary location
-        if os.path.exists(PROFILES_DATA_PATH):
-            df = pd.read_csv(PROFILES_DATA_PATH)
-            logger.info(f"Loaded leaderboard data from {PROFILES_DATA_PATH}")
-        # Fall back to root location if primary doesn't exist
-        elif os.path.exists(ROOT_PROFILES_DATA_PATH):
-            df = pd.read_csv(ROOT_PROFILES_DATA_PATH)
-            logger.info(f"Loaded leaderboard data from {ROOT_PROFILES_DATA_PATH}")
-        # Try public location as a last resort
-        elif os.path.exists(PUBLIC_DATA_PATH):
-            df = pd.read_csv(PUBLIC_DATA_PATH)
-            logger.info(f"Loaded leaderboard data from {PUBLIC_DATA_PATH}")
-        else:
-            logger.error("Leaderboard data not found in any location")
-            return jsonify({"error": "Leaderboard data not found"}), 404
+        # All possible CSV file locations
+        possible_paths = [
+            PROFILES_DATA_PATH, 
+            ROOT_PROFILES_DATA_PATH, 
+            PUBLIC_DATA_PATH
+        ]
         
-        # Convert DataFrame to list of dictionaries
-        leaderboard_data = df.to_dict(orient='records')
-        return jsonify(leaderboard_data)
+        # Add Render-specific paths if they exist
+        if os.environ.get('RENDER') == 'true' or os.path.exists('/opt/render'):
+            render_paths = [
+                os.path.join(PROJECT_ROOT, 'data', 'profiles_data.csv'),
+                os.path.join(PROJECT_ROOT, 'public', 'profiles_data.csv')
+            ]
+            possible_paths.extend(render_paths)
+        
+        # Log all possible paths
+        logger.info("Looking for CSV file in the following locations:")
+        for path in possible_paths:
+            if os.path.exists(path):
+                size = os.path.getsize(path)
+                logger.info(f"  {path} (exists, size: {size} bytes)")
+            else:
+                logger.info(f"  {path} (does not exist)")
+        
+        # Try all locations until we find a valid CSV
+        for csv_path in possible_paths:
+            if os.path.exists(csv_path) and os.path.getsize(csv_path) > 0:
+                try:
+                    df = pd.read_csv(csv_path)
+                    logger.info(f"Loaded leaderboard data from {csv_path} with {len(df)} records")
+                    
+                    # Convert DataFrame to list of dictionaries
+                    leaderboard_data = df.to_dict(orient='records')
+                    return jsonify(leaderboard_data)
+                except Exception as e:
+                    logger.error(f"Error reading {csv_path}: {e}")
+                    continue
+        
+        # If we get here, we couldn't read any CSV file
+        logger.error("Could not read any valid CSV file")
+        return jsonify({"error": "Leaderboard data not found"}), 404
     except Exception as e:
         logger.error(f"Error retrieving leaderboard data: {str(e)}")
         return jsonify({"error": str(e)}), 500
