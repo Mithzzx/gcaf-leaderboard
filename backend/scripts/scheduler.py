@@ -44,7 +44,7 @@ def run_scraper():
             logging.info(f"Scraper completed successfully. Data saved to {output_file}")
             
             # Also copy to frontend public directory for deployment
-            frontend_public_dir = os.path.abspath(os.path.join(root_dir, "frontend/public"))
+            frontend_public_dir = os.path.abspath(os.path.join(root_dir, "public"))
             if not os.path.exists(frontend_public_dir):
                 os.makedirs(frontend_public_dir)
                 
