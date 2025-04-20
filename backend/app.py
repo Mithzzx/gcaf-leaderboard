@@ -84,7 +84,13 @@ def run_schedule():
     schedule.every(10).minutes.do(keep_alive)
     
     # Also run immediately on startup
+    logger.info("Running initial scraper job")
+    start_time = time.time()
     run_scraper()
+    end_time = time.time()
+    execution_time = end_time - start_time
+    minutes, seconds = divmod(execution_time, 60)
+    logger.info(f"Initial scraper job completed in {int(minutes)} minutes and {int(seconds)} seconds")
     
     # Initial keep-alive ping
     logger.info("Performing initial keep-alive ping")
@@ -174,10 +180,25 @@ def trigger_scraper():
     """Manually trigger the scraper (protected in production)"""
     try:
         # In production, you might want to add authentication here
-        thread = threading.Thread(target=run_scraper)
+        logger.info("Manual scraper run triggered via API")
+        start_time = time.time()
+        
+        # Run in a separate thread to not block the response
+        def run_scraper_thread():
+            try:
+                run_scraper()
+                end_time = time.time()
+                execution_time = end_time - start_time
+                minutes, seconds = divmod(execution_time, 60)
+                logger.info(f"Manual scraper run completed in {int(minutes)} minutes and {int(seconds)} seconds")
+            except Exception as e:
+                logger.error(f"Error in manual scraper thread: {str(e)}")
+        
+        thread = threading.Thread(target=run_scraper_thread)
         thread.daemon = True
         thread.start()
-        return jsonify({"status": "Scraper started"}), 200
+        
+        return jsonify({"status": "Scraper started", "message": "The scraper is running in the background. Check logs for completion."}), 200
     except Exception as e:
         logger.error(f"Error triggering scraper: {str(e)}")
         return jsonify({"error": str(e)}), 500

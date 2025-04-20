@@ -2,6 +2,7 @@ import os
 import subprocess
 import logging
 from datetime import datetime
+import time
 
 # Set up logging
 log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
@@ -21,6 +22,7 @@ def run_scraper():
     """Run the cloud profile scraper script once"""
     try:
         logging.info("Starting cloud profile scraper...")
+        start_time = time.time()
         
         # Get the script directory
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -84,6 +86,12 @@ def run_scraper():
             logging.error(f"Error: {result.stderr}")
             # Log the actual stdout too for debugging
             logging.error(f"Output: {result.stdout}")
+        
+        # Calculate and log execution time
+        end_time = time.time()
+        execution_time = end_time - start_time
+        minutes, seconds = divmod(execution_time, 60)
+        logging.info(f"Total scraping time: {int(minutes)} minutes and {int(seconds)} seconds")
             
     except Exception as e:
         logging.error(f"Error running scraper: {e}")

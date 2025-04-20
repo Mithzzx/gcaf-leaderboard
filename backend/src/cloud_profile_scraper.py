@@ -17,6 +17,8 @@ def scrape_cloud_profile(url):
     Returns:
         dict: Profile data including badges categorized by type
     """
+    profile_start_time = time.time()
+    
     # Send request to the profile page
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -140,6 +142,11 @@ def scrape_cloud_profile(url):
         profile_data['badges_by_type'] = badges_by_type
         profile_data['badges'] = []
 
+    # Calculate and log profile scraping time
+    profile_end_time = time.time()
+    profile_time_seconds = profile_end_time - profile_start_time
+    print(f"Time to scrape profile {profile_data.get('name', url)}: {profile_time_seconds:.2f} seconds")
+    
     return profile_data
 
 
@@ -420,7 +427,7 @@ if __name__ == "__main__":
     profiles_data = []
 
     print("Scraping profiles...")
-    start_time = time.time()
+    total_start_time = time.time()
 
     for url in profile_urls:
         print(f"Scraping profile: {url}")
@@ -448,7 +455,12 @@ if __name__ == "__main__":
                 "total_points": total_points
             })
 
-    print(f"Scraping completed in {time.time() - start_time:.2f} seconds")
+    # Calculate and log total scraping time
+    total_end_time = time.time()
+    total_time_seconds = total_end_time - total_start_time
+    minutes, seconds = divmod(total_time_seconds, 60)
+    print(f"Scraping completed in {total_time_seconds:.2f} seconds")
+    print(f"Total scraping time: {int(minutes)} minutes and {int(seconds)} seconds")
     print(f"Found data for {len(profiles_data)} profiles")
 
     # Check if we have any data before creating a DataFrame
