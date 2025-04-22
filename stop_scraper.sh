@@ -24,6 +24,20 @@ fi
 echo "Stopping scraper process (PID: $PID)..."
 kill "$PID"
 
+# Wait for the process to terminate
+attempt=0
+while ps -p "$PID" > /dev/null && [ $attempt -lt 10 ]; do
+    echo "Waiting for process to terminate..."
+    sleep 1
+    attempt=$((attempt + 1))
+done
+
+# Force kill if still running
+if ps -p "$PID" > /dev/null; then
+    echo "Process did not terminate gracefully. Forcing termination..."
+    kill -9 "$PID"
+fi
+
 # Remove the PID file
 rm "$PID_FILE"
 echo "Scraper stopped successfully."

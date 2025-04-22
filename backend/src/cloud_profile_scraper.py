@@ -37,6 +37,9 @@ def scrape_cloud_profile(url):
 
     # Extract profile data
     profile_data = {}
+    
+    # Store the profile URL
+    profile_data['profile_url'] = url
 
     # Profile name
     try:
@@ -469,7 +472,8 @@ if __name__ == "__main__":
                     "arcade_points": arcade_points,
                     "milestone": milestone_name,
                     "bonus_points": bonus_points,
-                    "total_points": total_points
+                    "total_points": total_points,
+                    "profile_url": profile_data.get("profile_url", "N/A")
                 })
             else:
                 print(f"Failed to scrape profile: {url}")
@@ -481,7 +485,7 @@ if __name__ == "__main__":
         columns = [
             'name', 'game_badges', 'special_game_badges', 'trivia_badges',
             'skill_badges', 'lab_badges', 'arcade_points', 'milestone',
-            'bonus_points', 'total_points'
+            'bonus_points', 'total_points', 'profile_url'
         ]
 
         # Convert the list of profiles to a DataFrame
@@ -518,7 +522,7 @@ if __name__ == "__main__":
         columns = [
             'name', 'game_badges', 'special_game_badges', 'trivia_badges',
             'skill_badges', 'lab_badges', 'arcade_points', 'milestone',
-            'bonus_points', 'total_points'
+            'bonus_points', 'total_points', 'profile_url'
         ]
         df = pd.DataFrame(columns=columns)
         

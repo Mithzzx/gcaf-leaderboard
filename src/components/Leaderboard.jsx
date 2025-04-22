@@ -5,7 +5,7 @@ import ReactConfetti from "react-confetti";
 // API base URL - we'll set this to the Render deployment URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-export default function Leaderboard() {
+export default function Leaderboard({ backendAvailable }) {
   const [participants, setParticipants] = useState([]);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,35 +36,36 @@ export default function Leaderboard() {
   const loadData = useCallback(async (abortController) => {
     setIsLoading(true);
     try {
-      // First try to load from the API
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/api/leaderboard`, { 
-          signal: abortController.signal 
-        });
-        
-        if (response.ok) {
-          const jsonData = await response.json();
-          setLastUpdated(new Date());
+      // First try to load from the API if backend is available
+      if (backendAvailable) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/leaderboard`, { 
+            signal: abortController.signal 
+          });
           
-          const processedData = jsonData.map((row) => ({
-            name: row["name"] || "Unknown",
-            arcade: parseInt(row["game_badges"]) || 0,
-            specialArcade: parseInt(row["special_game_badges"]) || 0,
-            trivia: parseInt(row["trivia_badges"]) || 0,
-            skill: parseInt(row["skill_badges"]) || 0,
-            labs: parseInt(row["lab_badges"]) || 0,
-            score: parseInt(row["total_points"]) || 0,
-            milestone: row["milestone"] || "None",
-          }));
-
-          const validData = processedData.filter(p => !isNaN(p.score));
-          setParticipants(validData);
-          setIsLoading(false);
-          return;
+          if (response.ok) {
+            const jsonData = await response.json();
+            setLastUpdated(new Date());
+            
+            const processedData = jsonData.map((row) => ({
+              name: row["name"] || "Unknown",
+              arcade: parseInt(row["game_badges"]) || 0,
+              specialArcade: parseInt(row["special_game_badges"]) || 0,
+              trivia: parseInt(row["trivia_badges"]) || 0,
+              skill: parseInt(row["skill_badges"]) || 0,
+              labs: parseInt(row["lab_badges"]) || 0,
+              score: parseInt(row["total_points"]) || 0,
+              milestone: row["milestone"] || "None",
+            }));
+  
+            const validData = processedData.filter(p => !isNaN(p.score));
+            setParticipants(validData);
+            setIsLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.log(`Failed to load from API: ${e.message}`);
         }
-      } catch (e) {
-        console.log(`Failed to load from API: ${e.message}`);
       }
       
       // Fallback to local CSV files if API fails
@@ -74,11 +75,13 @@ export default function Leaderboard() {
         "/public/data.csv"
       ];
       
+      let response = null;
       for (const source of dataSources) {
         try {
-          response = await fetch(source, { signal: abortController.signal });
-          if (response.ok) {
+          const tempResponse = await fetch(source, { signal: abortController.signal });
+          if (tempResponse.ok) {
             console.log(`Successfully loaded data from ${source}`);
+            response = tempResponse;
             break;
           }
         } catch (e) {
@@ -124,7 +127,7 @@ export default function Leaderboard() {
         setIsLoading(false);
       }
     }
-  }, []);
+  }, [backendAvailable]);
 
   useEffect(() => {
     const abortController = new AbortController();
